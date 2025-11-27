@@ -7,6 +7,12 @@
 
 ## Quick Start (One Command)
 
+**Fresh Ubuntu/WSL (installs Node.js + everything):**
+```bash
+sudo apt update && sudo apt install -y git curl && curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt install -y nodejs && git clone https://github.com/zumanm1/OSPF2-LL-JSON.git && cd OSPF2-LL-JSON/netviz-pro && npm install && npm run dev:full
+```
+
+**If Node.js 20.x already installed:**
 ```bash
 git clone https://github.com/zumanm1/OSPF2-LL-JSON.git && cd OSPF2-LL-JSON/netviz-pro && npm install && npm run dev:full
 ```
