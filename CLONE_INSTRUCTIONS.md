@@ -167,6 +167,49 @@ npm run dev:full
 
 ---
 
+## Utility Scripts
+
+Pre-built bash scripts for common operations:
+
+| Script | Description |
+|--------|-------------|
+| `./start.sh` | Start all servers in background |
+| `./stop.sh` | Stop all running servers |
+| `./restart.sh` | Stop and start all servers |
+| `./clean-db.sh` | Reset database to fresh state (recreates default admin) |
+| `./prep.sh` | Full reinstall (stops, removes, clones, installs) |
+| `./run.sh` | Start + validate all services |
+
+### Usage Examples
+```bash
+cd ~/OSPF2-LL-JSON/netviz-pro
+
+# Start servers
+./start.sh
+
+# Stop servers
+./stop.sh
+
+# Restart servers
+./restart.sh
+
+# Reset database (clears all users, recreates admin/admin123)
+./clean-db.sh
+```
+
+---
+
+## Password Change Policy
+
+The default admin account requires a password change:
+- **Default:** admin/admin123
+- **Grace Period:** 10 logins
+- **After 10 logins:** Password change is FORCED (cannot access app until changed)
+
+Users will see a warning banner showing remaining grace logins.
+
+---
+
 ## Run in Background (Server Mode)
 
 ```bash

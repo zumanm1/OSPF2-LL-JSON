@@ -27,6 +27,7 @@ import {
   verifyPassword,
   incrementUsage,
   checkExpiry,
+  checkPasswordChangeRequired,
   recordLogin,
   getLoginHistory,
   createSession,
@@ -149,6 +150,9 @@ app.post('/api/auth/login', (req, res) => {
   // Increment usage counter
   const usageResult = incrementUsage(user.id);
 
+  // Check if password change is required
+  const passwordChangeStatus = checkPasswordChangeRequired(user.id);
+
   // Generate JWT token
   const token = jwt.sign(
     { userId: user.id, username: user.username, role: user.role },
@@ -170,7 +174,10 @@ app.post('/api/auth/login', (req, res) => {
       usesRemaining: usageResult.usesRemaining,
       maxUses: user.max_uses,
       currentUses: user.current_uses + 1,
-      expiryEnabled: user.expiry_enabled === 1
+      expiryEnabled: user.expiry_enabled === 1,
+      mustChangePassword: passwordChangeStatus.mustChange,
+      graceLoginsRemaining: passwordChangeStatus.graceLoginsRemaining,
+      forcePasswordChange: passwordChangeStatus.forceChange
     },
     expiresIn: SESSION_TIMEOUT
   });
@@ -224,7 +231,9 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
     usesRemaining,
     expiryEnabled: user.expiry_enabled === 1,
     isExpired: user.is_expired === 1,
-    lastLogin: user.last_login
+    lastLogin: user.last_login,
+    mustChangePassword: user.must_change_password === 1,
+    graceLoginsRemaining: user.password_change_grace_logins || 10
   });
 });
 

@@ -24,6 +24,8 @@ db.exec(`
     current_uses INTEGER DEFAULT 0,
     is_expired INTEGER DEFAULT 0,
     expiry_enabled INTEGER DEFAULT 1,
+    must_change_password INTEGER DEFAULT 0,
+    password_change_grace_logins INTEGER DEFAULT 10,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     last_login DATETIME
@@ -48,16 +50,24 @@ db.exec(`
   );
 `);
 
+// Add new columns to existing tables if they don't exist (migration)
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0`);
+} catch (e) { /* Column already exists */ }
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN password_change_grace_logins INTEGER DEFAULT 10`);
+} catch (e) { /* Column already exists */ }
+
 // Create default admin user if not exists
 const createDefaultAdmin = () => {
   const adminExists = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');
   if (!adminExists) {
     const passwordHash = bcrypt.hashSync('admin123', 10);
     db.prepare(`
-      INSERT INTO users (username, password_hash, role, max_uses, expiry_enabled)
-      VALUES (?, ?, 'admin', 0, 0)
+      INSERT INTO users (username, password_hash, role, max_uses, expiry_enabled, must_change_password, password_change_grace_logins)
+      VALUES (?, ?, 'admin', 0, 0, 1, 10)
     `).run('admin', passwordHash);
-    console.log('[DB] Default admin user created (admin/admin123)');
+    console.log('[DB] Default admin user created (admin/admin123) - Password change required after 10 logins');
   }
 };
 
@@ -86,6 +96,7 @@ export const createUser = (username, password, role = 'user', maxUses = 10, expi
 export const getUserById = (id) => {
   return db.prepare(`
     SELECT id, username, role, max_uses, current_uses, is_expired, expiry_enabled,
+           must_change_password, password_change_grace_logins,
            created_at, updated_at, last_login
     FROM users WHERE id = ?
   `).get(id);
@@ -98,6 +109,7 @@ export const getUserByUsername = (username) => {
 export const getAllUsers = () => {
   return db.prepare(`
     SELECT id, username, role, max_uses, current_uses, is_expired, expiry_enabled,
+           must_change_password, password_change_grace_logins,
            created_at, updated_at, last_login
     FROM users ORDER BY created_at DESC
   `).all();
@@ -125,7 +137,13 @@ export const updateUser = (id, updates) => {
 
 export const updatePassword = (id, newPassword) => {
   const passwordHash = bcrypt.hashSync(newPassword, 10);
-  db.prepare('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(passwordHash, id);
+  // Clear must_change_password flag and reset grace logins when password is changed
+  db.prepare(`
+    UPDATE users
+    SET password_hash = ?, must_change_password = 0, password_change_grace_logins = 10, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(passwordHash, id);
+  console.log(`[DB] Password updated for user ID ${id} - Password change requirement cleared`);
   return { success: true };
 };
 
@@ -211,6 +229,33 @@ export const checkExpiry = (userId) => {
     isExpired: user.is_expired === 1,
     usesRemaining: Math.max(0, user.max_uses - user.current_uses)
   };
+};
+
+// Check and update password change status
+export const checkPasswordChangeRequired = (userId) => {
+  const user = getUserById(userId);
+  if (!user) return { mustChange: false, graceLoginsRemaining: 0, forceChange: false };
+
+  // If password change is required (using default password)
+  if (user.must_change_password === 1) {
+    // Decrement grace logins
+    const newGraceLogins = Math.max(0, (user.password_change_grace_logins || 10) - 1);
+
+    db.prepare(`
+      UPDATE users SET password_change_grace_logins = ? WHERE id = ?
+    `).run(newGraceLogins, userId);
+
+    // Force change if grace period expired
+    const forceChange = newGraceLogins === 0;
+
+    return {
+      mustChange: true,
+      graceLoginsRemaining: newGraceLogins,
+      forceChange
+    };
+  }
+
+  return { mustChange: false, graceLoginsRemaining: 10, forceChange: false };
 };
 
 export const recordLogin = (userId, ipAddress, success = true) => {

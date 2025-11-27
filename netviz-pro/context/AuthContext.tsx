@@ -22,6 +22,9 @@ export interface User {
   expiryEnabled: boolean;
   isExpired: boolean;
   lastLogin?: string;
+  mustChangePassword?: boolean;
+  graceLoginsRemaining?: number;
+  forcePasswordChange?: boolean;
 }
 
 export interface AuthContextType {
@@ -205,6 +208,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: 'POST',
         body: JSON.stringify({ currentPassword, newPassword })
       });
+
+      // After successful password change, update user state to clear mustChangePassword
+      if (user) {
+        const updatedUser = {
+          ...user,
+          mustChangePassword: false,
+          graceLoginsRemaining: 10,
+          forcePasswordChange: false
+        };
+        setUser(updatedUser);
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+      }
 
       return { success: true };
     } catch (err) {
