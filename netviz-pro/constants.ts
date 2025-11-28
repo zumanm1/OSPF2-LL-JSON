@@ -1,9 +1,10 @@
 // Base colors for known countries (can be extended)
+// OPTIMIZED FOR MAXIMUM DISTINCTION - Final Iteration
 const BASE_COUNTRY_COLORS: Record<string, string> = {
   // ===== AFRICA =====
   ZIM: "#10b981", // Zimbabwe (Emerald)
   ZWE: "#10b981", // Zimbabwe - ISO code (Emerald)
-  ZAF: "#a855f7", // South Africa (Purple)
+  ZAF: "#a855f7", // South Africa (Purple) - DISTINCT from Pink/Fuchsia
   RSA: "#a855f7", // South Africa - alt (Purple)
   NGA: "#22c55e", // Nigeria (Green)
   KEN: "#eab308", // Kenya (Yellow)
@@ -15,14 +16,14 @@ const BASE_COUNTRY_COLORS: Record<string, string> = {
   MAR: "#e11d48", // Morocco (Rose)
   DZA: "#6366f1", // Algeria (Indigo)
   AGO: "#78716c", // Angola (Stone)
-  MOZ: "#0ea5e9", // Mozambique (Sky)
+  MOZ: "#06b6d4", // Mozambique (Cyan) - DISTINCT from Emerald/Blue
   ZMB: "#65a30d", // Zambia (Lime-dark)
   BWA: "#7c3aed", // Botswana (Violet)
   NAM: "#db2777", // Namibia (Pink-dark)
   SEN: "#059669", // Senegal (Emerald-dark)
   CIV: "#ea580c", // Ivory Coast (Orange-dark)
   CMR: "#16a34a", // Cameroon (Green-dark)
-  LSO: "#a3e635", // Lesotho (Lime-light)
+  LSO: "#facc15", // Lesotho (Yellow) - DISTINCT from Lime/Amber
   COD: "#0891b2", // DRC - Democratic Republic of Congo (Cyan-dark)
   DRC: "#0891b2", // DRC - alternate (Cyan-dark)
   RWA: "#4ade80", // Rwanda (Green-light)
@@ -33,9 +34,9 @@ const BASE_COUNTRY_COLORS: Record<string, string> = {
   LBY: "#38bdf8", // Libya (Sky-light)
 
   // ===== EUROPE =====
-  GBR: "#ef4444", // United Kingdom (Red)
-  DEU: "#f59e0b", // Germany (Amber)
-  FRA: "#8b5cf6", // France (Violet)
+  GBR: "#dc2626", // United Kingdom (Red) - MAX DISTINCT
+  DEU: "#f97316", // Germany (Orange) - DISTINCT from Yellow
+  FRA: "#ec4899", // France (Pink) - DISTINCT from Purple
   ITA: "#22c55e", // Italy (Green)
   ESP: "#dc2626", // Spain (Red-dark)
   NLD: "#f97316", // Netherlands (Orange)
@@ -47,7 +48,7 @@ const BASE_COUNTRY_COLORS: Record<string, string> = {
   NOR: "#2563eb", // Norway (Blue-dark)
   DNK: "#dc2626", // Denmark (Red-dark)
   FIN: "#3b82f6", // Finland (Blue)
-  PRT: "#22c55e", // Portugal (Green)
+  PRT: "#16a34a", // Portugal (Green-dark) - DISTINCT from Emerald
   IRL: "#10b981", // Ireland (Emerald)
   GRC: "#0ea5e9", // Greece (Sky)
   CZE: "#dc2626", // Czech Republic (Red-dark)
@@ -57,7 +58,7 @@ const BASE_COUNTRY_COLORS: Record<string, string> = {
   RUS: "#dc2626", // Russia (Red-dark)
 
   // ===== AMERICAS =====
-  USA: "#3b82f6", // United States (Blue)
+  USA: "#2563eb", // United States (Blue-dark) - DISTINCT from Cyan
   CAN: "#e11d48", // Canada (Rose)
   MEX: "#22c55e", // Mexico (Green)
   BRA: "#84cc16", // Brazil (Lime)

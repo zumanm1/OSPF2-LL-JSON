@@ -35,6 +35,8 @@ import { applyHostnameMappings, DEFAULT_HOSTNAME_MAPPINGS } from './utils/hostna
 import { exportAllToSingleFile, ExportColumn } from './utils/exportUtils';
 import { findAllPaths } from './utils/graphAlgorithms';
 
+
+
 // LocalStorage Keys
 const STORAGE_KEYS = {
   ORIGINAL_DATA: 'netviz_original_data',
@@ -65,10 +67,10 @@ const App: React.FC = () => {
 
     setOriginalData(prevData => {
       const updatedNodes = applyHostnameMappings(prevData.nodes, hostnameMappingConfig);
-      
+
       // Only update if something actually changed to avoid infinite loops
-      const hasChanges = updatedNodes.some((node, i) => 
-        node.hostname !== prevData.nodes[i].hostname || 
+      const hasChanges = updatedNodes.some((node, i) =>
+        node.hostname !== prevData.nodes[i].hostname ||
         node.role !== prevData.nodes[i].role
       );
 
@@ -118,13 +120,14 @@ const App: React.FC = () => {
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showDeviceManager, setShowDeviceManager] = useState(false);
   const [showHostnameMappingPanel, setShowHostnameMappingPanel] = useState(false);
-  
+
   const [analysisSelection, setAnalysisSelection] = useState<{
     source: { id: string, country: string } | null;
     dest: { id: string, country: string } | null;
   }>({ source: null, dest: null });
 
-  // CRITICAL FIX: Helper to close all analysis modals (prevents multiple open simultaneously)
+  // View Mode State
+  const [viewMode, setViewMode] = useState<'detailed' | 'high-level'>('detailed');
   const closeAllAnalysisModals = () => {
     setShowPairCountriesModal(false);
     setShowImpactAnalysisModal(false);
@@ -309,6 +312,8 @@ const App: React.FC = () => {
       window.location.reload();
     }
   };
+
+
 
   // Export All Analysis Data
   const handleExportAll = () => {
@@ -696,6 +701,7 @@ const App: React.FC = () => {
           >
             <Download className="w-4 h-4" />
           </button>
+
           <button
             onClick={handleClearCache}
             className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md hover:bg-red-100 dark:hover:bg-red-900/50 transition-all text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
@@ -815,6 +821,24 @@ const App: React.FC = () => {
                     </div>
                   )}
 
+                  <div className="mt-6 border-t border-gray-200 dark:border-gray-800 pt-4">
+                    <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">View Mode</h2>
+                    <div className="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1">
+                      <button
+                        onClick={() => setViewMode('detailed')}
+                        className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'detailed' ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                      >
+                        Detailed
+                      </button>
+                      <button
+                        onClick={() => setViewMode('high-level')}
+                        className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'high-level' ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                      >
+                        High Level
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="mt-6">
                     <div className="flex items-center justify-between mb-2">
                       <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Filter Legend</h2>
@@ -877,6 +901,7 @@ const App: React.FC = () => {
             highlightedPath={highlightedPath}
             activeCountries={activeCountries}
             theme={theme}
+            viewMode={viewMode}
           />
 
           {/* Overlay Node Detail Panel */}
