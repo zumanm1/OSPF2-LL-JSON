@@ -90,6 +90,7 @@ export interface GraphMetadata {
   snapshot_timestamp?: string;
   age_seconds?: number;
   cached?: boolean;
+  parse_error?: string;  // CRITICAL FIX: Added for error handling in parser
 }
 
 export interface TrafficSnapshot {

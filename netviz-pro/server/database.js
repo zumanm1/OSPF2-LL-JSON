@@ -116,16 +116,55 @@ export const getAllUsers = () => {
 };
 
 export const updateUser = (id, updates) => {
+  // CRITICAL FIX: Whitelist allowed fields to prevent SQL injection
+  // Only these exact field names are allowed - no dynamic injection possible
   const allowedFields = ['username', 'role', 'max_uses', 'is_expired', 'expiry_enabled'];
+
+  // CRITICAL FIX: Validate that id is a number to prevent injection
+  const userId = parseInt(id, 10);
+  if (isNaN(userId)) {
+    return { success: false, error: 'Invalid user ID' };
+  }
+
+  // Filter to only allowed fields and validate values
   const fieldsToUpdate = Object.keys(updates).filter(k => allowedFields.includes(k));
 
   if (fieldsToUpdate.length === 0) {
     return { success: false, error: 'No valid fields to update' };
   }
 
+  // CRITICAL FIX: Validate each field value type
+  const values = [];
+  for (const field of fieldsToUpdate) {
+    const value = updates[field];
+
+    // Type validation per field
+    if (field === 'username') {
+      if (typeof value !== 'string' || value.length === 0 || value.length > 100) {
+        return { success: false, error: 'Invalid username' };
+      }
+      values.push(value);
+    } else if (field === 'role') {
+      if (value !== 'admin' && value !== 'user') {
+        return { success: false, error: 'Invalid role (must be admin or user)' };
+      }
+      values.push(value);
+    } else if (field === 'max_uses') {
+      const numValue = parseInt(value, 10);
+      if (isNaN(numValue) || numValue < 0) {
+        return { success: false, error: 'Invalid max_uses (must be non-negative integer)' };
+      }
+      values.push(numValue);
+    } else if (field === 'is_expired' || field === 'expiry_enabled') {
+      // Boolean fields stored as 0/1
+      const boolValue = value ? 1 : 0;
+      values.push(boolValue);
+    }
+  }
+
+  // Build parameterized query with validated field names
   const setClause = fieldsToUpdate.map(f => `${f} = ?`).join(', ');
-  const values = fieldsToUpdate.map(f => updates[f]);
-  values.push(id);
+  values.push(userId);
 
   try {
     db.prepare(`UPDATE users SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(...values);

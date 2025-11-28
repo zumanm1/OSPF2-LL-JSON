@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useCallback } from 'react';
 import { NetworkData } from '../types';
 import { calculateLinkImpact } from '../utils/impactAnalysis';
 import { X, AlertTriangle, TrendingUp, Activity, Zap, Network as NetworkIcon, Download } from 'lucide-react';
@@ -15,6 +15,24 @@ const ImpactAnalysisModal: React.FC<ImpactAnalysisModalProps> = ({
   currentData,
   onClose
 }) => {
+  // CRITICAL FIX: Add Escape key handler to close modal
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  // CRITICAL FIX: Click outside to close modal
+  const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  }, [onClose]);
 
   const impactAnalysis = useMemo(() => {
     return calculateLinkImpact(
@@ -67,7 +85,10 @@ const ImpactAnalysisModal: React.FC<ImpactAnalysisModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col">
 
         {/* Header */}

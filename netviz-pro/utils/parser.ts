@@ -1,6 +1,65 @@
 import { NetworkData, NetworkNode, NetworkLink } from '../types';
 
+/**
+ * CRITICAL FIX: Validate input data structure before parsing
+ * Prevents crashes from malformed data
+ */
+const validateInputData = (rawData: any): { valid: boolean; error?: string } => {
+  if (!rawData || typeof rawData !== 'object') {
+    return { valid: false, error: 'Invalid input: data must be an object' };
+  }
+
+  // Check for either files array (pyATS format) or nodes/links (direct format)
+  const hasFiles = rawData.files && Array.isArray(rawData.files);
+  const hasNodesAndLinks = rawData.nodes && Array.isArray(rawData.nodes) &&
+                           rawData.links && Array.isArray(rawData.links);
+
+  if (!hasFiles && !hasNodesAndLinks) {
+    return {
+      valid: false,
+      error: 'Invalid input: must have either "files" array or "nodes" and "links" arrays'
+    };
+  }
+
+  return { valid: true };
+};
+
+/**
+ * Safely get a string value from potentially malformed data
+ */
+const safeString = (value: any, defaultValue: string = ''): string => {
+  if (value === null || value === undefined) return defaultValue;
+  return String(value).trim();
+};
+
+/**
+ * Safely get a number value from potentially malformed data
+ */
+const safeNumber = (value: any, defaultValue: number = 0): number => {
+  const num = Number(value);
+  return isNaN(num) ? defaultValue : num;
+};
+
 export const parsePyATSData = (rawData: any): NetworkData => {
+  // CRITICAL FIX: Validate input before processing
+  const validation = validateInputData(rawData);
+  if (!validation.valid) {
+    console.error('[Parser] Validation failed:', validation.error);
+    return {
+      nodes: [],
+      links: [],
+      timestamp: new Date().toISOString(),
+      metadata: {
+        node_count: 0,
+        edge_count: 0,
+        data_source: 'invalid_input',
+        snapshot_timestamp: new Date().toISOString(),
+        layout_algorithm: 'force_directed',
+        parse_error: validation.error
+      }
+    };
+  }
+
   const nodesMap = new Map<string, NetworkNode>();
   const links: NetworkLink[] = [];
 

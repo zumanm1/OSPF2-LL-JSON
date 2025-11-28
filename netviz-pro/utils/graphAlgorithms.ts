@@ -30,6 +30,59 @@ const buildAdjacencyList = (nodes: NetworkNode[], links: NetworkLink[]): Adjacen
   return adj;
 };
 
+// MinHeap implementation for efficient Dijkstra
+class MinHeap {
+  private heap: { id: string; cost: number }[] = [];
+
+  push(item: { id: string; cost: number }): void {
+    this.heap.push(item);
+    this.bubbleUp(this.heap.length - 1);
+  }
+
+  pop(): { id: string; cost: number } | undefined {
+    if (this.heap.length === 0) return undefined;
+    const result = this.heap[0];
+    const last = this.heap.pop()!;
+    if (this.heap.length > 0) {
+      this.heap[0] = last;
+      this.bubbleDown(0);
+    }
+    return result;
+  }
+
+  isEmpty(): boolean {
+    return this.heap.length === 0;
+  }
+
+  private bubbleUp(index: number): void {
+    while (index > 0) {
+      const parentIndex = Math.floor((index - 1) / 2);
+      if (this.heap[parentIndex].cost <= this.heap[index].cost) break;
+      [this.heap[parentIndex], this.heap[index]] = [this.heap[index], this.heap[parentIndex]];
+      index = parentIndex;
+    }
+  }
+
+  private bubbleDown(index: number): void {
+    const length = this.heap.length;
+    while (true) {
+      const leftChild = 2 * index + 1;
+      const rightChild = 2 * index + 2;
+      let smallest = index;
+
+      if (leftChild < length && this.heap[leftChild].cost < this.heap[smallest].cost) {
+        smallest = leftChild;
+      }
+      if (rightChild < length && this.heap[rightChild].cost < this.heap[smallest].cost) {
+        smallest = rightChild;
+      }
+      if (smallest === index) break;
+      [this.heap[index], this.heap[smallest]] = [this.heap[smallest], this.heap[index]];
+      index = smallest;
+    }
+  }
+}
+
 export const findShortestPathCost = (
   nodes: NetworkNode[],
   links: NetworkLink[],
@@ -40,22 +93,28 @@ export const findShortestPathCost = (
 
   const adj = buildAdjacencyList(nodes, links);
   const costs = new Map<string, number>();
-  const pq: { id: string; cost: number }[] = [];
+  const pq = new MinHeap();
 
   nodes.forEach(node => costs.set(node.id, Infinity));
   costs.set(startNodeId, 0);
   pq.push({ id: startNodeId, cost: 0 });
 
-  while (pq.length > 0) {
-    // Sort by cost (simulating priority queue)
-    pq.sort((a, b) => a.cost - b.cost);
-    const { id: currentId, cost: currentCost } = pq.shift()!;
+  while (!pq.isEmpty()) {
+    // CRITICAL FIX: Use proper MinHeap instead of O(n log n) sort per iteration
+    const current = pq.pop()!;
+    const { id: currentId, cost: currentCost } = current;
 
     if (currentCost > (costs.get(currentId) || Infinity)) continue;
     if (currentId === endNodeId) return currentCost;
 
     const neighbors = adj.get(currentId) || [];
     for (const neighbor of neighbors) {
+      // CRITICAL FIX: Skip negative costs to prevent incorrect results
+      // (Dijkstra requires non-negative edge weights)
+      if (neighbor.cost < 0) {
+        console.warn(`[Dijkstra] Skipping negative cost edge: ${currentId} -> ${neighbor.target} (cost: ${neighbor.cost})`);
+        continue;
+      }
       const newCost = currentCost + neighbor.cost;
       if (newCost < (costs.get(neighbor.target) || Infinity)) {
         costs.set(neighbor.target, newCost);

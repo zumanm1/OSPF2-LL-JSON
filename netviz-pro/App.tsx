@@ -124,6 +124,30 @@ const App: React.FC = () => {
     dest: { id: string, country: string } | null;
   }>({ source: null, dest: null });
 
+  // CRITICAL FIX: Helper to close all analysis modals (prevents multiple open simultaneously)
+  const closeAllAnalysisModals = () => {
+    setShowPairCountriesModal(false);
+    setShowImpactAnalysisModal(false);
+    setShowTransitAnalyzerModal(false);
+    setShowWhatIfModal(false);
+    setShowFullCostMatrixModal(false);
+    setShowDijkstraVisualizer(false);
+    setShowTrafficFlowModal(false);
+    setShowCostOptimizerModal(false);
+    setShowRippleEffectModal(false);
+    setShowNetworkHealthModal(false);
+    setShowCapacityPlanningModal(false);
+    setShowTrafficMatrixModal(false);
+    setShowPrePostTrafficModal(false);
+    setShowInterfaceDashboard(false);
+  };
+
+  // Helper to open a modal (closes others first for mutual exclusivity)
+  const openModal = (setter: React.Dispatch<React.SetStateAction<boolean>>) => {
+    closeAllAnalysisModals();
+    setter(true);
+  };
+
   // Visibility Filter State - PERSISTED
   const [activeCountries, setActiveCountries] = useLocalStorage<string[]>(
     STORAGE_KEYS.ACTIVE_COUNTRIES,
@@ -136,12 +160,23 @@ const App: React.FC = () => {
     return Array.from(countries).sort();
   }, [originalData]);
 
-  // Initialize Active Countries (only if empty - first load)
+  // CRITICAL FIX: Initialize Active Countries ONLY on first load when localStorage is empty
+  // Note: handleDataLoaded already sets activeCountries when new data is uploaded.
+  // This effect only runs to initialize from localStorage-restored originalData on app start.
   useEffect(() => {
-    if (activeCountries.length === 0 && allCountries.length > 0) {
-      setActiveCountries(allCountries);
+    // Only initialize if we have nodes in originalData but no activeCountries
+    // This handles the case where localStorage has originalData but activeCountries wasn't persisted
+    if (activeCountries.length === 0 && allCountries.length > 0 && originalData.nodes.length > 0) {
+      // Use a small delay to prevent race with handleDataLoaded
+      const timer = setTimeout(() => {
+        // Re-check condition inside timeout to avoid race
+        if (activeCountries.length === 0) {
+          setActiveCountries(allCountries);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [allCountries, activeCountries.length, setActiveCountries]); // Include all dependencies properly
+  }, [allCountries]); // Only depend on allCountries to prevent infinite loop
 
   // --- Derived Data Calculation (The Simulation Engine) ---
   const currentData = useMemo(() => {
@@ -264,6 +299,8 @@ const App: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    // CRITICAL FIX: Revoke blob URL to prevent memory leak
+    URL.revokeObjectURL(url);
   };
 
   const handleClearCache = () => {
@@ -527,91 +564,91 @@ const App: React.FC = () => {
           {/* Analysis Tools - Labeled Buttons */}
           <div className="flex items-center gap-1 flex-wrap">
             <button
-              onClick={() => setShowPairCountriesModal(true)}
+              onClick={() => openModal(setShowPairCountriesModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-300"
             >
               <GitCompare className="w-3.5 h-3.5" />
               <span>Pair</span>
             </button>
             <button
-              onClick={() => setShowImpactAnalysisModal(true)}
+              onClick={() => openModal(setShowImpactAnalysisModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-300"
             >
               <TrendingUp className="w-3.5 h-3.5" />
               <span>Impact</span>
             </button>
             <button
-              onClick={() => setShowTransitAnalyzerModal(true)}
+              onClick={() => openModal(setShowTransitAnalyzerModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-gray-300 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-300"
             >
               <Globe className="w-3.5 h-3.5" />
               <span>Transit</span>
             </button>
             <button
-              onClick={() => setShowWhatIfModal(true)}
+              onClick={() => openModal(setShowWhatIfModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-gray-300 dark:border-gray-700 hover:border-amber-400 dark:hover:border-amber-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-300"
             >
               <FlaskConical className="w-3.5 h-3.5" />
               <span>What-If</span>
             </button>
             <button
-              onClick={() => setShowFullCostMatrixModal(true)}
+              onClick={() => openModal(setShowFullCostMatrixModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 border border-gray-300 dark:border-gray-700 hover:border-cyan-400 dark:hover:border-cyan-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-300"
             >
               <Grid3X3 className="w-3.5 h-3.5" />
               <span>Matrix</span>
             </button>
             <button
-              onClick={() => setShowDijkstraVisualizer(true)}
+              onClick={() => openModal(setShowDijkstraVisualizer)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 border border-gray-300 dark:border-gray-700 hover:border-yellow-400 dark:hover:border-yellow-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-yellow-600 dark:hover:text-yellow-300"
             >
               <Route className="w-3.5 h-3.5" />
               <span>Dijkstra</span>
             </button>
             <button
-              onClick={() => setShowTrafficFlowModal(true)}
+              onClick={() => openModal(setShowTrafficFlowModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-pink-100 dark:hover:bg-pink-900/50 border border-gray-300 dark:border-gray-700 hover:border-pink-400 dark:hover:border-pink-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-300"
             >
               <Network className="w-3.5 h-3.5" />
               <span>Traffic</span>
             </button>
             <button
-              onClick={() => setShowCostOptimizerModal(true)}
+              onClick={() => openModal(setShowCostOptimizerModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-lime-100 dark:hover:bg-lime-900/50 border border-gray-300 dark:border-gray-700 hover:border-lime-400 dark:hover:border-lime-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-lime-600 dark:hover:text-lime-300"
             >
               <Lightbulb className="w-3.5 h-3.5" />
               <span>Optimizer</span>
             </button>
             <button
-              onClick={() => setShowRippleEffectModal(true)}
+              onClick={() => openModal(setShowRippleEffectModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-gray-300 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-300"
             >
               <Waves className="w-3.5 h-3.5" />
               <span>Ripple</span>
             </button>
             <button
-              onClick={() => setShowNetworkHealthModal(true)}
+              onClick={() => openModal(setShowNetworkHealthModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-gray-300 dark:border-gray-700 hover:border-rose-400 dark:hover:border-rose-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-300"
             >
               <HeartPulse className="w-3.5 h-3.5" />
               <span>Health</span>
             </button>
             <button
-              onClick={() => setShowCapacityPlanningModal(true)}
+              onClick={() => openModal(setShowCapacityPlanningModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 border border-gray-300 dark:border-gray-700 hover:border-cyan-400 dark:hover:border-cyan-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-300"
             >
               <HardDrive className="w-3.5 h-3.5" />
               <span>Capacity</span>
             </button>
             <button
-              onClick={() => setShowTrafficMatrixModal(true)}
+              onClick={() => openModal(setShowTrafficMatrixModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-violet-100 dark:hover:bg-violet-900/50 border border-gray-300 dark:border-gray-700 hover:border-violet-400 dark:hover:border-violet-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-300"
             >
               <BarChart3 className="w-3.5 h-3.5" />
               <span>Util Matrix</span>
             </button>
             <button
-              onClick={() => setShowPrePostTrafficModal(true)}
+              onClick={() => openModal(setShowPrePostTrafficModal)}
               className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-gray-300 dark:border-gray-700 hover:border-amber-400 dark:hover:border-amber-500/50 transition-all text-gray-700 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-300"
             >
               <GitBranch className="w-3.5 h-3.5" />

@@ -12,8 +12,24 @@ export interface ExportColumn {
 /**
  * Convert data array to CSV string
  */
+/**
+ * Escape a value for CSV (RFC 4180 compliant)
+ * - Double quotes within values are escaped by doubling them
+ * - All values wrapped in quotes for safety
+ */
+function escapeCSVValue(value: any): string {
+  if (value === undefined || value === null) {
+    return '""';
+  }
+  const str = String(value);
+  // Escape internal quotes by doubling them
+  const escaped = str.replace(/"/g, '""');
+  return `"${escaped}"`;
+}
+
 export function toCSV(data: any[], columns: ExportColumn[]): string {
-  const headers = columns.map(col => `"${col.header}"`).join(',');
+  // CRITICAL FIX: Properly escape header values too (prevents CSV injection)
+  const headers = columns.map(col => escapeCSVValue(col.header)).join(',');
 
   const rows = data.map(row => {
     return columns.map(col => {
@@ -21,13 +37,8 @@ export function toCSV(data: any[], columns: ExportColumn[]): string {
       if (col.formatter) {
         value = col.formatter(value, row);
       }
-      // Handle undefined/null
-      if (value === undefined || value === null) {
-        value = '';
-      }
-      // Escape quotes and wrap in quotes
-      const stringValue = String(value).replace(/"/g, '""');
-      return `"${stringValue}"`;
+      // Use centralized escaping function for consistency
+      return escapeCSVValue(value);
     }).join(',');
   });
 

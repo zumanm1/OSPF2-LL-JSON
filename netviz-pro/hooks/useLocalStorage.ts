@@ -19,8 +19,13 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       // Parse stored json or if none return initialValue
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      // If error also return initialValue
-      console.warn(`Error loading localStorage key "${key}":`, error);
+      // CRITICAL FIX: Clear corrupted data from localStorage to prevent repeated failures
+      console.warn(`Error loading localStorage key "${key}" - clearing corrupted data:`, error);
+      try {
+        window.localStorage.removeItem(key);
+      } catch (removeError) {
+        console.error(`Failed to remove corrupted key "${key}":`, removeError);
+      }
       return initialValue;
     }
   });
@@ -45,14 +50,26 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     try {
       // Allow value to be a function so we have same API as useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
-      // Save state
-      setStoredValue(valueToStore);
-      // Save to local storage
+
+      // Try to persist to localStorage first
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        try {
+          window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        } catch (storageError) {
+          // CRITICAL FIX: Handle QuotaExceededError gracefully
+          if (storageError instanceof Error &&
+              (storageError.name === 'QuotaExceededError' || storageError.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+            console.error(`Storage quota exceeded for key "${key}". Consider clearing old data.`);
+            // Still update state but log a warning that persistence failed
+          } else {
+            throw storageError;
+          }
+        }
       }
+
+      // Update React state (even if storage failed, keep UI in sync)
+      setStoredValue(valueToStore);
     } catch (error) {
-      // A more advanced implementation would handle the error case
       console.error(`Error saving localStorage key "${key}":`, error);
     }
   };

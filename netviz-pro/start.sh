@@ -73,7 +73,9 @@ fi
 
 # Clear log and start
 > "$LOG_FILE"
-nohup npm run dev:full >> "$LOG_FILE" 2>&1 &
+# Use full path for npm to ensure nohup can find it in non-interactive shells
+NPM_PATH=$(which npm 2>/dev/null || echo "/usr/bin/npm")
+nohup "$NPM_PATH" run dev:full >> "$LOG_FILE" 2>&1 &
 APP_PID=$!
 
 echo -e "  Starting servers (PID: $APP_PID)..."
