@@ -37,11 +37,15 @@ interface AdminPanelProps {
 }
 
 // ============================================================================
-// API HELPER
+// API HELPER (DYNAMIC - USES CURRENT HOST)
 // ============================================================================
-const AUTH_API_URL = 'http://127.0.0.1:9041/api';
+const getAuthApiUrl = () => {
+  const hostname = window.location.hostname;
+  return `http://${hostname}:9041/api`;
+};
 
 const apiCall = async (endpoint: string, token: string, options: RequestInit = {}) => {
+  const AUTH_API_URL = getAuthApiUrl();
   const response = await fetch(`${AUTH_API_URL}${endpoint}`, {
     ...options,
     headers: {

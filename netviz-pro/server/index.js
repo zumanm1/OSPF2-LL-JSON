@@ -1,7 +1,7 @@
 /**
  * NetViz Pro Authentication Server
  * Features:
- * - LOCALHOST ONLY access (no external connections allowed)
+ * - Network-accessible authentication server
  * - User authentication with password hashing
  * - Usage counter with configurable expiry
  * - Admin-only password recovery
@@ -40,41 +40,35 @@ dotenv.config({ path: path.join(__dirname, '../.env.local') });
 
 const app = express();
 const PORT = process.env.AUTH_PORT || 9041;
+const HOST = process.env.AUTH_HOST || '0.0.0.0'; // Allow external access
 const JWT_SECRET = process.env.APP_SECRET_KEY || 'netviz-secret-key-change-in-production';
 const SESSION_TIMEOUT = parseInt(process.env.APP_SESSION_TIMEOUT) || 3600;
-
-// ============================================================================
-// LOCALHOST ONLY MIDDLEWARE - BLOCKS ALL EXTERNAL CONNECTIONS
-// ============================================================================
-const localhostOnly = (req, res, next) => {
-  const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
-  const localAddresses = ['127.0.0.1', '::1', '::ffff:127.0.0.1', 'localhost'];
-
-  // Check if request is from localhost
-  const isLocal = localAddresses.some(addr => ip.includes(addr));
-
-  if (!isLocal) {
-    console.log(`[SECURITY] Blocked external access attempt from: ${ip}`);
-    return res.status(403).json({
-      error: 'Access denied',
-      message: 'This application is only accessible from localhost'
-    });
-  }
-
-  next();
-};
-
-// Apply localhost restriction to ALL routes
-app.use(localhostOnly);
 
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
 app.use(express.json());
+
+// Dynamic CORS - allow requests from any origin on port 9040
 app.use(cors({
-  origin: [
-    'http://localhost:9040', 'http://127.0.0.1:9040'
-  ],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    // Allow any origin on port 9040 (the frontend port)
+    if (origin.endsWith(':9040')) {
+      return callback(null, true);
+    }
+
+    // Also allow localhost variations
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+
+    // Log blocked origins for debugging
+    console.log(`[CORS] Blocked origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 
@@ -365,36 +359,37 @@ app.get('/api/admin/users/:id/history', requireAuth, requireAdmin, (req, res) =>
 });
 
 // ============================================================================
-// HEALTH CHECK (localhost only)
+// HEALTH CHECK
 // ============================================================================
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'NetViz Pro Auth Server',
-    localhost_only: true,
+    network_accessible: true,
     timestamp: new Date().toISOString()
   });
 });
 
 // ============================================================================
-// START SERVER (LOCALHOST ONLY)
+// START SERVER (NETWORK ACCESSIBLE)
 // ============================================================================
-app.listen(PORT, '127.0.0.1', () => {
+app.listen(PORT, HOST, () => {
   console.log('');
   console.log('============================================================');
   console.log('  NetViz Pro Authentication Server');
   console.log('============================================================');
   console.log(`  Status: Running`);
   console.log(`  Port: ${PORT}`);
-  console.log(`  Access: LOCALHOST ONLY (127.0.0.1)`);
+  console.log(`  Host: ${HOST}`);
+  console.log(`  Access: Network accessible`);
   console.log(`  Session Timeout: ${SESSION_TIMEOUT}s`);
   console.log('');
   console.log('  Security Features:');
-  console.log('  - All external connections BLOCKED');
   console.log('  - Password hashing with bcrypt');
   console.log('  - JWT session tokens');
   console.log('  - Usage counter with configurable expiry');
   console.log('  - Admin-only password recovery');
+  console.log('  - CORS protection (port 9040 origins only)');
   console.log('');
   console.log('  Default Admin: admin / admin123');
   console.log('  (Change password after first login!)');

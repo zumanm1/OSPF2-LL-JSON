@@ -3,7 +3,7 @@
  * Features:
  * - Session management with JWT tokens
  * - Usage tracking with expiry
- * - Localhost-only API calls
+ * - Dynamic API URL based on current host
  * - Admin role support
  */
 
@@ -42,9 +42,15 @@ export interface AuthContextType {
 }
 
 // ============================================================================
-// API CONFIGURATION (LOCALHOST ONLY)
+// API CONFIGURATION (DYNAMIC - USES CURRENT HOST)
 // ============================================================================
-const AUTH_API_URL = 'http://127.0.0.1:9041/api';
+// Use the same hostname as the current page, but on port 9041 for auth API
+const getAuthApiUrl = () => {
+  const hostname = window.location.hostname;
+  return `http://${hostname}:9041/api`;
+};
+
+const AUTH_API_URL = getAuthApiUrl();
 
 // ============================================================================
 // CONTEXT
