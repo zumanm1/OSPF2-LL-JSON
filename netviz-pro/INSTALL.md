@@ -1,128 +1,256 @@
 # NetViz Pro - Installation Guide
 
-## Table of Contents
-1. [Prerequisites](#prerequisites)
-2. [Quick Install (One-Liner)](#quick-install-one-liner)
-3. [Step-by-Step Installation](#step-by-step-installation)
-4. [Verify Installation](#verify-installation)
-5. [Running the Application](#running-the-application)
-6. [Accessing from Other Machines](#accessing-from-other-machines)
-7. [Troubleshooting](#troubleshooting)
-8. [Uninstall](#uninstall)
+**Version: 3.0**
+**For Ubuntu 24.04 LTS**
+**Repository: https://github.com/zumanm1/OSPF2-LL-JSON**
 
 ---
 
-## Prerequisites
+## Table of Contents
 
-### Required Software
+1. [Overview](#1-overview)
+2. [System Requirements](#2-system-requirements)
+3. [Quick Start (Automated)](#3-quick-start-automated)
+4. [Manual Installation](#4-manual-installation)
+5. [Management Commands](#5-management-commands)
+6. [Troubleshooting](#6-troubleshooting)
+7. [Verified Test Results](#7-verified-test-results)
 
-| Software | Minimum Version | Check Command |
-|----------|-----------------|---------------|
-| Node.js | v18.0.0+ | `node --version` |
-| npm | v9.0.0+ | `npm --version` |
-| git | v2.0+ | `git --version` |
+---
 
-### Install Prerequisites
+## 1. Overview
 
-#### Ubuntu/Debian Linux
+NetViz Pro is a React-based OSPF network topology visualizer with:
+- Interactive network graph visualization using D3.js
+- Dijkstra-based path analysis between nodes
+- 14 analysis modals (Pair, Impact, Transit, What-If, Matrix, etc.)
+- Theme support (dark/light mode)
+- LocalStorage persistence
+- JWT-based authentication
+
+### Architecture
+
+| Component | Technology | Port |
+|-----------|------------|------|
+| Frontend | React 19 + TypeScript + Vite | 9040 |
+| Backend | Express.js + SQLite | 9041 |
+| Visualization | D3.js | - |
+| Database | better-sqlite3 | - |
+
+---
+
+## 2. System Requirements
+
+### Minimum Hardware
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| CPU | 2 cores | 4 cores |
+| RAM | 2 GB | 4 GB |
+| Disk | 5 GB free | 10 GB free |
+
+### Software Requirements
+
+- **Node.js**: v18.x or higher (v20.x recommended)
+- **npm**: v8.x or higher (v10.x recommended)
+- **Git**: v2.x or higher
+- **curl**: For health checks (optional)
+
+### Supported Operating Systems
+
+- Ubuntu 24.04 LTS (tested)
+- Ubuntu 22.04 LTS (compatible)
+- macOS (compatible)
+- Other Linux distributions (should work)
+
+---
+
+## 3. Quick Start (Automated)
+
+### Option A: Standard Installation (Prerequisites already installed)
+
+```bash
+# Clone the repository
+git clone https://github.com/zumanm1/OSPF2-LL-JSON.git
+cd OSPF2-LL-JSON/netviz-pro
+
+# Make scripts executable
+chmod +x *.sh *.py
+
+# Run installation
+./install.sh
+
+# Access at http://localhost:9040
+# Username: admin
+# Password: admin123
+```
+
+### Option B: Install with Dependencies
+
+If Node.js or npm are missing, the installer can install them:
+
+```bash
+git clone https://github.com/zumanm1/OSPF2-LL-JSON.git
+cd OSPF2-LL-JSON/netviz-pro
+chmod +x *.sh *.py
+./install.sh --with-deps
+```
+
+### Option C: Clean Installation (7-Phase)
+
+Full clean install that removes old installations first:
+
+```bash
+./install.sh --clean
+```
+
+### Option D: Force Reinstall
+
+Force reinstall even if already installed:
+
+```bash
+./install.sh --force
+```
+
+### Installation Options Summary
+
+| Option | Description |
+|--------|-------------|
+| `./install.sh` | Standard install (validates prerequisites) |
+| `./install.sh --with-deps` | Install Node.js, npm, Python if missing |
+| `./install.sh --clean` | 7-phase clean install (remove old, install fresh) |
+| `./install.sh --force` | Force reinstall even if exists |
+| `./install.sh --help` | Show help |
+
+### 7-Phase Installation Process
+
+When using `--clean`, the installer performs:
+
+| Phase | Description |
+|-------|-------------|
+| Phase 1 | Remove old Node.js |
+| Phase 2 | Remove old npm cache |
+| Phase 3 | Clean Python environment |
+| Phase 4 | Install/verify Python 3.12 |
+| Phase 5 | Install/verify Node.js 20.x |
+| Phase 6 | Install application dependencies |
+| Phase 7 | Validate and start application |
+
+---
+
+## 4. Manual Installation
+
+### Step 4.1: Install System Dependencies (Ubuntu 24.04)
+
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Install git
-sudo apt install -y git curl
-
-# Install Node.js 20.x (LTS)
+# Install Node.js 20.x (official NodeSource repo)
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
+sudo apt-get install -y nodejs
 
-# Verify
-node --version   # Should show v20.x.x
-npm --version    # Should show 10.x.x
-git --version    # Should show git version 2.x.x
+# Install additional tools
+sudo apt-get install -y git curl
+
+# Verify installations
+node --version    # Should show v20.x
+npm --version     # Should show 10.x
+git --version     # Should show 2.x
 ```
 
-#### CentOS/RHEL/Fedora
-```bash
-# Install git
-sudo yum install -y git curl
-
-# Install Node.js 20.x
-curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
-sudo yum install -y nodejs
-
-# Verify
-node --version
-npm --version
-```
-
-#### macOS
-```bash
-# Install Homebrew (if not installed)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install Node.js and git
-brew install node@20 git
-
-# Verify
-node --version
-npm --version
-```
-
-#### Windows
-1. Download Node.js from https://nodejs.org/ (LTS version)
-2. Run the installer
-3. Open Command Prompt or PowerShell
-4. Verify: `node --version` and `npm --version`
-
----
-
-## Quick Install (One-Liner)
+### Step 4.2: Clone Repository
 
 ```bash
-git clone https://github.com/zumanm1/OSPF2-LL-JSON.git && cd OSPF2-LL-JSON/netviz-pro && npm install && npm run dev
-```
-
----
-
-## Step-by-Step Installation
-
-### Step 1: Clone the Repository
-
-```bash
-# Navigate to your preferred directory
 cd ~
-
-# Clone the repository
 git clone https://github.com/zumanm1/OSPF2-LL-JSON.git
-
-# Expected output:
-# Cloning into 'OSPF2-LL-JSON'...
-# remote: Enumerating objects: xxx, done.
-# ...
-```
-
-### Step 2: Navigate to Project Directory
-
-```bash
 cd OSPF2-LL-JSON/netviz-pro
-
-# Verify you're in the right place
-ls -la
-# Should see: App.tsx, package.json, components/, utils/, etc.
+chmod +x *.sh *.py
 ```
 
-### Step 3: Install Dependencies
+### Step 4.3: Install npm Dependencies
 
 ```bash
 npm install
-
-# Expected output:
-# added XXX packages, and audited XXX packages in Xm
-# found 0 vulnerabilities
 ```
 
-**If npm install fails:**
+### Step 4.4: Start the Application
+
+```bash
+./start.sh
+```
+
+### Step 4.5: Access the Application
+
+| Component | URL |
+|-----------|-----|
+| Frontend | http://localhost:9040 |
+| Auth API | http://localhost:9041/api |
+
+Default credentials:
+- **Username**: admin
+- **Password**: admin123
+
+---
+
+## 5. Management Commands
+
+### Shell Scripts
+
+| Command | Description |
+|---------|-------------|
+| `./start.sh` | Start all services |
+| `./stop.sh` | Stop all services |
+| `./restart.sh` | Restart all services |
+| `./status.sh` | Show service status |
+| `./logs.sh` | View logs (last 50 lines) |
+| `./logs.sh -f` | Follow logs in real-time |
+| `./logs.sh --errors` | Show only errors |
+| `./reset.sh --auth` | Reset authentication |
+| `./reset.sh --db` | Reset database |
+| `./reset.sh --all` | Full factory reset |
+| `./check.sh` | Verify prerequisites |
+
+### Python CLI Manager (netviz.py)
+
+```bash
+# Check system requirements
+python3 netviz.py check
+
+# Service management
+python3 netviz.py start
+python3 netviz.py stop
+python3 netviz.py restart
+python3 netviz.py status
+
+# View logs
+python3 netviz.py logs
+python3 netviz.py logs -f        # Follow logs
+python3 netviz.py logs -n 100    # Last 100 lines
+
+# Reset options
+python3 netviz.py reset --db     # Reset database
+python3 netviz.py reset --auth   # Reset authentication
+python3 netviz.py reset --all    # Full reset
+```
+
+---
+
+## 6. Troubleshooting
+
+### Node.js Not Found
+
+```bash
+# Install Node.js 20.x
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Or run install with deps
+./install.sh --with-deps
+```
+
+### npm Install Fails
+
 ```bash
 # Clear cache and retry
 npm cache clean --force
@@ -130,179 +258,92 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
-### Step 4: Start the Application
+### Port Already in Use
 
 ```bash
-npm run dev
-
-# Expected output:
-#   VITE v6.x.x  ready in XXX ms
-#
-#   ➜  Local:   http://localhost:9040/
-#   ➜  Network: http://xxx.xxx.xxx.xxx:9040/
-```
-
----
-
-## Verify Installation
-
-### Check in Browser
-
-1. Open your web browser
-2. Navigate to: `http://localhost:9040`
-3. You should see the NetViz Pro interface
-4. Upload a topology JSON file to test
-
-### Verify from Command Line
-
-```bash
-# Check if the app is listening on port 9040
-curl -s http://localhost:9040 | head -5
-
-# Should return HTML content starting with <!DOCTYPE html>
-```
-
----
-
-## Running the Application
-
-### Development Mode (with hot-reload)
-```bash
-npm run dev
-```
-
-### Production Build
-```bash
-# Build for production
-npm run build
-
-# Preview the production build
-npm run preview
-```
-
-### Run in Background (Linux/macOS)
-```bash
-# Start in background
-nohup npm run dev > /tmp/netviz.log 2>&1 &
-
-# Check if running
+# Check what's using ports
 lsof -i:9040
+lsof -i:9041
 
-# View logs
-tail -f /tmp/netviz.log
+# Kill processes
+./stop.sh
 
-# Stop the app
-lsof -ti:9040 | xargs kill -9
+# Or manually
+lsof -ti:9040,9041 | xargs kill -9
+```
+
+### Service Won't Start
+
+```bash
+# Check logs
+./logs.sh --errors
+
+# Or view full log
+tail -100 /tmp/netviz-pro.log
+```
+
+### Password Reset
+
+```bash
+# Reset to default admin/admin123
+./reset.sh --auth
+./start.sh
+```
+
+### Full Factory Reset
+
+```bash
+./reset.sh --all -y
+./start.sh
 ```
 
 ---
 
-## Accessing from Other Machines
+## 7. Verified Test Results
 
-The application binds to `0.0.0.0:9040` by default, making it accessible from any machine on the network.
+### Test Environment
 
-### Find Your Server's IP Address
+| Server | IP | OS | Status |
+|--------|----|----|--------|
+| VM 172 | 172.16.39.172 | Ubuntu 24.04.2 LTS | ✅ Verified |
+| VM 173 | 172.16.39.173 | Ubuntu 24.04.3 LTS | ✅ Verified |
 
-```bash
-# Linux
-hostname -I | awk '{print $1}'
+### Test Results Summary
 
-# macOS
-ipconfig getifaddr en0
-```
+#### VM 172.16.39.172
 
-### Access URL Format
-```
-http://<server-ip>:9040
-```
+| Test | Command | Result |
+|------|---------|--------|
+| Standard Install | `./install.sh` | ✅ PASS |
+| Stop Services | `./stop.sh` | ✅ PASS |
+| Start Services | `./start.sh` | ✅ PASS |
+| Force Install | `./install.sh --force` | ✅ PASS |
 
-### Example
-If your server IP is `172.16.39.173`:
-```
-http://172.16.39.173:9040
-```
+#### VM 172.16.39.173
 
-### Firewall Configuration (if needed)
+| Test | Command | Result |
+|------|---------|--------|
+| Standard Install | `./install.sh` | ✅ PASS |
+| Stop Services | `./stop.sh` | ✅ PASS |
+| Start Services | `./start.sh` | ✅ PASS |
 
-```bash
-# Ubuntu/Debian (ufw)
-sudo ufw allow 9040/tcp
+### Validated Versions
 
-# CentOS/RHEL (firewalld)
-sudo firewall-cmd --add-port=9040/tcp --permanent
-sudo firewall-cmd --reload
-```
+| Component | Version |
+|-----------|---------|
+| Node.js | v20.19.6 |
+| npm | 10.8.2 |
+| Python | 3.12.3 |
+| Git | 2.43.0 |
 
----
+### Installation Time
 
-## Troubleshooting
-
-### Issue: Port 9040 already in use
-
-```bash
-# Find and kill the process
-lsof -ti:9040 | xargs kill -9
-
-# Or use a different port
-npm run dev -- --port 9041
-```
-
-### Issue: npm install fails with permission errors
-
-```bash
-# Fix npm permissions
-sudo chown -R $(whoami) ~/.npm
-npm install
-```
-
-### Issue: "command not found: node"
-
-```bash
-# Check if Node.js is in PATH
-which node
-
-# If not found, add to PATH (Linux)
-export PATH=$PATH:/usr/local/bin
-
-# Make permanent by adding to ~/.bashrc
-echo 'export PATH=$PATH:/usr/local/bin' >> ~/.bashrc
-source ~/.bashrc
-```
-
-### Issue: App shows blank screen
-
-1. Open browser developer tools (F12)
-2. Check Console tab for errors
-3. Ensure you've uploaded a valid JSON topology file
-4. Clear browser cache and reload
-
-### Issue: Cannot connect from remote machine
-
-1. Check firewall settings
-2. Verify the server IP address
-3. Ensure the app is running: `lsof -i:9040`
-4. Test with curl from the remote machine: `curl http://<server-ip>:9040`
-
----
-
-## Uninstall
-
-### Remove the Application
-
-```bash
-# Stop the app first
-lsof -ti:9040 | xargs kill -9 2>/dev/null
-
-# Remove the directory
-cd ~
-rm -rf OSPF2-LL-JSON
-```
-
-### Clean npm Cache (Optional)
-
-```bash
-npm cache clean --force
-```
+| Phase | Duration |
+|-------|----------|
+| Clone repository | ~5 seconds |
+| npm install | ~8 seconds |
+| Start services | ~1 second |
+| **Total** | **~15 seconds** |
 
 ---
 
@@ -310,17 +351,26 @@ npm cache clean --force
 
 | Action | Command |
 |--------|---------|
-| Clone repo | `git clone https://github.com/zumanm1/OSPF2-LL-JSON.git` |
-| Install deps | `cd OSPF2-LL-JSON/netviz-pro && npm install` |
-| Start app | `npm run dev` |
-| Build prod | `npm run build` |
-| Stop app | `lsof -ti:9040 \| xargs kill -9` |
-| Check status | `lsof -i:9040` |
-| View logs | `tail -f /tmp/netviz.log` |
+| Fresh install | `./install.sh` |
+| Install with deps | `./install.sh --with-deps` |
+| Clean install | `./install.sh --clean` |
+| Start | `./start.sh` |
+| Stop | `./stop.sh` |
+| Restart | `./restart.sh` |
+| Status | `./status.sh` |
+| View logs | `./logs.sh -f` |
+| Reset auth | `./reset.sh --auth` |
+| Full reset | `./reset.sh --all` |
+| Check system | `./check.sh` |
 
 ---
 
 ## Support
 
-- **GitHub Issues**: https://github.com/zumanm1/OSPF2-LL-JSON/issues
-- **Documentation**: See README.md and docs/ folder
+- **Repository**: https://github.com/zumanm1/OSPF2-LL-JSON
+- **Issues**: https://github.com/zumanm1/OSPF2-LL-JSON/issues
+
+---
+
+*Built with Claude Code - Version 3.0*
+*Verified: November 28, 2025*
